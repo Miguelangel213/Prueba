@@ -4,6 +4,7 @@ import {
   Audio,
   Easing,
   interpolate,
+  spring,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
@@ -63,6 +64,96 @@ const A = (
 const drawOffset = (t: number, t0: number, d: number) =>
   1 - E_OUT(clamp01((t - t0) / d));
 
+
+const FPS = 30;
+const SP = (t: number, t0: number, damping = 10, stiffness = 130) =>
+  spring({ frame: Math.max(0, (t - t0) * FPS), fps: FPS, config: { damping, stiffness, mass: 0.8 } });
+const rnd = (i: number, k = 1) => {
+  const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453;
+  return x - Math.floor(x);
+};
+
+const Sticker: React.FC<{
+  t: number; t0: number; e: string; x: number; y: number; size?: number; rot?: number; phase?: number;
+}> = ({ t, t0, e, x, y, size = 110, rot = 0, phase = 0 }) => {
+  const p = SP(t, t0);
+  return (
+    <div
+      style={{
+        position: "absolute", left: x, top: y, fontSize: size, lineHeight: 1,
+        opacity: clamp01(p * 3),
+        transform: `translateY(${Math.sin(t * 2.2 + phase) * 10}px) rotate(${rot + Math.sin(t * 1.7 + phase) * 6}deg) scale(${p})`,
+        filter: "drop-shadow(0 12px 18px rgba(0,0,0,.18))",
+      }}
+    >
+      {e}
+    </div>
+  );
+};
+
+const COLORS = [Y, INK, "#E5484D", "#fff", Y];
+const Burst: React.FC<{ t: number; t0: number; x: number; y: number; n?: number }> = ({ t, t0, x, y, n = 22 }) => {
+  const d = t - t0;
+  if (d < 0 || d > 1.5) return null;
+  return (
+    <>
+      {Array.from({ length: n }, (_, i) => {
+        const ang = (i / n) * Math.PI * 2 + rnd(i) * 0.6;
+        const sp = 450 + rnd(i, 2) * 550;
+        const dist = (sp * (1 - Math.exp(-d * 3))) / 3;
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: x + Math.cos(ang) * dist,
+              top: y + Math.sin(ang) * dist + 900 * d * d * 0.5,
+              width: 14, height: 26, borderRadius: 4,
+              background: COLORS[i % COLORS.length],
+              boxShadow: "0 0 0 2px rgba(0,0,0,.08)",
+              opacity: 1 - clamp01((d - 0.9) / 0.6),
+              transform: `rotate(${d * 500 * (i % 2 ? 1 : -1)}deg)`,
+            }}
+          />
+        );
+      })}
+    </>
+  );
+};
+
+const Background: React.FC<{ t: number }> = ({ t }) => (
+  <>
+    {[0, 1, 2].map((i) => (
+      <div
+        key={i}
+        style={{
+          position: "absolute", width: 760, height: 760, borderRadius: "50%",
+          left: 540 + Math.cos(t * 0.35 + i * 2.1) * 380 - 380,
+          top: 960 + Math.sin(t * 0.28 + i * 1.7) * 700 - 380,
+          background: `radial-gradient(circle,rgba(245,196,0,${i === 1 ? 0.3 : 0.17}),transparent 65%)`,
+        }}
+      />
+    ))}
+    {Array.from({ length: 28 }, (_, i) => {
+      const size = 8 + rnd(i, 3) * 20;
+      const y = (((rnd(i, 4) * 2100 - t * (30 + rnd(i, 5) * 60)) % 2100) + 2100) % 2100 - 100;
+      const ring = i % 3 === 0;
+      return (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: rnd(i, 6) * 1080 + Math.sin(t * 0.8 + i) * 30,
+            top: y, width: size, height: size, borderRadius: "50%",
+            background: ring ? "transparent" : i % 2 ? "rgba(245,196,0,.55)" : "rgba(43,43,46,.16)",
+            border: ring ? "3px solid rgba(43,43,46,.18)" : "none",
+          }}
+        />
+      );
+    })}
+  </>
+);
+
 const Logo: React.FC<{ k: string; size: number }> = ({ k, size }) => (
   <span className="lg" style={{ width: size, height: size }}>
     <img
@@ -99,6 +190,8 @@ const Words: React.FC<{ t: number; text: string; t0: number; step?: number }> = 
   </>
 );
 
+const tbOf = (t0: number, sm: string) => t0 + 0.15 + sm.split(" ").length * 0.14;
+
 const Head: React.FC<{
   t: number;
   sm: string;
@@ -108,17 +201,32 @@ const Head: React.FC<{
   top: number;
   bigsize?: number;
 }> = ({ t, sm, big, xs, t0, top, bigsize }) => {
-  const tb = t0 + 0.15 + sm.split(" ").length * 0.14;
+  const tb = tbOf(t0, sm);
+  const sp = SP(t, tb, 9, 150);
   return (
     <div className="txt" style={{ top, left: 150 }}>
       <div className="sm">
         <Words t={t} text={sm} t0={t0 + 0.1} />
       </div>
-      <div
-        className="bg"
-        style={{ fontSize: bigsize, whiteSpace: "nowrap", ...A(t, "bigw", tb, 0.5) }}
-      >
-        {big}
+      <div style={{ position: "relative", width: "fit-content" }}>
+        <div
+          style={{
+            position: "absolute", left: -12, right: -12, bottom: "10%", height: "34%",
+            background: Y, borderRadius: 10, transformOrigin: "left center",
+            transform: `scaleX(${E_DEF(clamp01((t - tb - 0.1) / 0.45))})`,
+          }}
+        />
+        <div
+          className="bg"
+          style={{
+            position: "relative", fontSize: bigsize, whiteSpace: "nowrap",
+            opacity: clamp01(sp * 4),
+            transform: `scale(${0.6 + 0.4 * sp})`,
+            filter: `blur(${10 * (1 - clamp01(sp))}px)`,
+          }}
+        >
+          {big}
+        </div>
       </div>
       <div className="xs" style={A(t, "w", tb + 0.45)}>
         {xs}
@@ -135,12 +243,14 @@ const Obj: React.FC<{
   children: React.ReactNode;
 }> = ({ t, pos, anim, t0, children }) => (
   <div className="obj" style={{ ...pos, ...A(t, anim, t0, 0.6) }}>
-    {children}
+    <div style={{ transform: `translateY(${Math.sin(t * 1.9 + t0 * 3) * 8 * clamp01((t - t0 - 0.6) / 0.4)}px)` }}>
+      {children}
+    </div>
   </div>
 );
 
 const Num: React.FC<{ t: number; a: number; n: string }> = ({ t, a, n }) => (
-  <div className="num" style={A(t, "pop", a + 0.05, 0.5)}>
+  <div className="num" style={{ transform: `scale(${SP(t, a + 0.05, 8, 160)}) rotate(${(1 - SP(t, a + 0.05, 8, 160)) * -20}deg)` }}>
     {n}
   </div>
 );
@@ -165,16 +275,55 @@ const barScale = (t: number, delay: number) => {
   return 0.35 + 0.65 * e;
 };
 
+const Chips: React.FC<{ t: number; a: number }> = ({ t, a }) => {
+  const t0 = a + 2.2;
+  const idx = Math.max(0, Math.floor((t - t0) / 0.7));
+  const frac = Math.max(0, ((t - t0) / 0.7) % 1);
+  const cur = idx % 3;
+  const prev = idx === 0 ? 0 : (idx + 2) % 3;
+  const cx = (i: number) => 150 + i * 230 + 85;
+  const move = E_DEF(clamp01(frac / 0.3));
+  const fx = cx(prev) + (cx(cur) - cx(prev)) * move;
+  const press = 1 - 0.1 * Math.sin(Math.PI * clamp01(frac / 0.25));
+  return (
+    <>
+      {[1, 2, 3].map((n, i) => {
+        const on = t > t0 && i === cur;
+        const sp = SP(t, a + 1.8 + i * 0.15, 9, 160);
+        return (
+          <div key={n} style={{ position: "absolute", left: 150 + i * 230, top: 1450, width: 170, height: 170, borderRadius: 44, background: on ? Y : "#fff", color: INK, fontFamily: "'Inter Display','Inter'", fontWeight: 800, fontSize: 100, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 24px 50px rgba(0,0,0,.14)", transform: `scale(${sp * (on ? 1.1 * press : 1)})` }}>{n}</div>
+        );
+      })}
+      <div style={{ position: "absolute", left: fx - 50, top: 1570 + (1 - press) * 120, fontSize: 100, lineHeight: 1, opacity: clamp01(SP(t, a + 2.1) * 3), transform: `rotate(-12deg) scale(${SP(t, a + 2.1)})`, filter: "drop-shadow(0 12px 14px rgba(0,0,0,.2))" }}>👆</div>
+    </>
+  );
+};
+
 export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
   const s = [...starts, T];
 
-  const sceneStyle = (a: number, b: number): React.CSSProperties => {
+  const impacts = [
+    tbOf(s[0], "No contrates un asistente"),
+    tbOf(s[1], "Notas, correos, buscar info…"),
+    tbOf(s[2] + 0.2, "La primera"),
+    tbOf(s[3] + 0.2, "La segunda"),
+    tbOf(s[4] + 0.2, "La tercera"),
+    tbOf(s[5] + 0.4, "Juntas trabajan como tu"),
+    tbOf(s[6], "¿Cuál pruebas primero?"),
+  ];
+  const sceneStyle = (i: number): React.CSSProperties => {
+    const a = s[i], b = s[i + 1];
     const inn = clamp01((t - a) / 0.15);
     const out = b >= T ? 1 : 1 - clamp01((t - (b - 0.2)) / 0.2);
-    return { opacity: Math.min(inn, out) };
+    const d = t - impacts[i];
+    const hit = d > 0 && d < 0.45;
+    const shake = hit ? 14 * Math.exp(-d * 9) * Math.sin(d * 60) : 0;
+    const punch = d > 0 && d < 0.3 ? 0.03 * Math.exp(-d * 14) : 0;
+    const zoom = 1 + 0.045 * clamp01((t - a) / (b - a)) + punch;
+    return { opacity: Math.min(inn, out), transform: `translate(${shake}px,${-shake * 0.6}px) scale(${zoom})` };
   };
 
   const scenes: React.ReactNode[] = [];
@@ -200,6 +349,9 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
           </div>
         </Obj>
         <Head t={t} sm="No contrates un asistente" big="TODAVÍA" xs="prueba antes estas 3 IAs gratis" t0={a} top={900} bigsize={200} />
+        <Sticker t={t} t0={a + 0.6} e="💸" x={760} y={300} size={150} rot={12} />
+        <Sticker t={t} t0={a + 0.9} e="⏰" x={830} y={560} size={110} rot={-10} phase={2} />
+        <Burst t={t} t0={tbOf(a, "No contrates un asistente")} x={430} y={1010} />
       </>,
     );
   }
@@ -220,6 +372,10 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
           </Obj>
         ))}
         <Head t={t} sm="Notas, correos, buscar info…" big="TODO EL DÍA" xs="en tareas que no venden" t0={a} top={760} bigsize={138} />
+        <Sticker t={t} t0={a + 0.5} e="📧" x={790} y={240} size={120} rot={8} />
+        <Sticker t={t} t0={a + 1.0} e="📝" x={830} y={1380} size={120} rot={-8} phase={1} />
+        <div style={{ position: "absolute", left: 585, top: 190, width: 84, height: 84, borderRadius: "50%", background: "#E5484D", color: "#fff", fontWeight: 800, fontSize: 34, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(229,72,77,.4)", transform: `scale(${SP(t, a + 0.7, 7, 200)})` }}>99+</div>
+        <Burst t={t} t0={tbOf(a, "Notas, correos, buscar info…")} x={450} y={870} n={16} />
       </>,
     );
   }
@@ -245,6 +401,9 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
         </Obj>
         <Num t={t} a={a} n="01" />
         <Head t={t} sm="La primera" big="ESCRIBE" xs="respuestas, correos y descripciones por ti" t0={a + 0.2} top={1180} bigsize={190} />
+        <Sticker t={t} t0={a + 0.5} e="✨" x={880} y={180} size={120} rot={10} />
+        <Sticker t={t} t0={a + 1.2} e="💬" x={820} y={860} size={120} rot={-8} phase={2} />
+        <Burst t={t} t0={tbOf(a + 0.2, "La primera")} x={480} y={1330} />
       </>,
     );
   }
@@ -279,6 +438,9 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
         </Obj>
         <Num t={t} a={a} n="02" />
         <Head t={t} sm="La segunda" big="ANOTA" xs="graba tus reuniones y te da el resumen" t0={a + 0.2} top={1180} bigsize={190} />
+        <Sticker t={t} t0={a + 0.5} e="🎙️" x={880} y={180} size={120} rot={10} />
+        <Sticker t={t} t0={a + 2.1} e="📝" x={830} y={900} size={110} rot={-8} phase={1} />
+        <Burst t={t} t0={tbOf(a + 0.2, "La segunda")} x={420} y={1330} />
       </>,
     );
   }
@@ -309,6 +471,9 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
         </Obj>
         <Num t={t} a={a} n="03" />
         <Head t={t} sm="La tercera" big="APRENDE" xs="tu negocio y responde con tu info" t0={a + 0.2} top={1180} bigsize={190} />
+        <Sticker t={t} t0={a + 0.5} e="🧠" x={880} y={170} size={120} rot={10} />
+        <Sticker t={t} t0={a + 2.0} e="📚" x={850} y={930} size={110} rot={-8} phase={2} />
+        <Burst t={t} t0={tbOf(a + 0.2, "La tercera")} x={500} y={1330} />
         <div className="foot" style={A(t, "w", a + 1.6)}>
           antes se llamaba NotebookLM
         </div>
@@ -345,6 +510,13 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
           ))}
         </div>
         <Head t={t} sm="Juntas trabajan como tu" big="ASISTENTE" xs="y no te cobran sueldo" t0={a + 0.4} top={900} bigsize={150} />
+        {[400, 680].map((x, i) => (
+          <div key={x} style={{ position: "absolute", left: x - 38, top: 482, width: 76, height: 76, borderRadius: "50%", background: Y, color: INK, fontWeight: 900, fontSize: 56, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 10px 24px rgba(0,0,0,.15)", transform: `scale(${SP(t, a + 0.6 + i * 0.35, 7, 200)})` }}>+</div>
+        ))}
+        <Sticker t={t} t0={a + 1.0} e="✨" x={110} y={240} size={100} rot={-12} />
+        <Sticker t={t} t0={a + 1.3} e="⭐" x={880} y={250} size={100} rot={12} phase={2} />
+        <div style={{ position: "absolute", left: 560, top: 1330, padding: "14px 30px", border: "7px solid #E5484D", color: "#E5484D", borderRadius: 18, fontWeight: 800, fontSize: 64, letterSpacing: 2, transform: `rotate(-8deg) scale(${1.6 - 0.6 * SP(t, a + 2.2, 12, 220)})`, opacity: clamp01(SP(t, a + 2.2, 12, 220) * 3) }}>$0 SUELDO</div>
+        <Burst t={t} t0={tbOf(a + 0.4, "Juntas trabajan como tu")} x={540} y={1020} n={26} />
       </>,
     );
   }
@@ -357,6 +529,9 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
           <Bub who="tú · comentario" style={{ fontSize: 72, fontWeight: 800 }}>2️⃣</Bub>
         </Obj>
         <Head t={t} sm="¿Cuál pruebas primero?" big="COMENTA" xs="1, 2 o 3 · y guárdalo para después" t0={a} top={780} bigsize={158} />
+        <Sticker t={t} t0={a + 0.8} e="❤️" x={880} y={610} size={100} rot={10} />
+        <Chips t={t} a={a} />
+        <Burst t={t} t0={tbOf(a, "¿Cuál pruebas primero?")} x={520} y={900} />
         <div className="brand" style={{ top: 1260, ...A(t, "w", a + 1.4) }}>
           <div className="logo">AG</div>
           <div>@angelgomezhg1</div>
@@ -391,6 +566,7 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
       <style>{CSS}</style>
       <div className="paper" />
       <div className="grid" />
+      <Background t={t} />
       <svg
         className="lines"
         viewBox="0 0 1080 1920"
@@ -401,14 +577,16 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
         <path className="ln" pathLength={1} d="M-40 1500 L1120 1180" style={lineStyle(s[2], 1.4)} />
         <path className="ln" pathLength={1} d="M200 -40 L1000 1960" style={lineStyle(s[5], 1.6)} />
       </svg>
-      <div className="prog">
-        <i style={{ transform: `scaleX(${clamp01(t / T)})` }} />
-      </div>
       {scenes.map((h, i) => (
-        <div className="sc" key={i} style={sceneStyle(s[i], s[i + 1])}>
+        <div className="sc" key={i} style={sceneStyle(i)}>
           {h}
         </div>
       ))}
+      {s.slice(1, 7).map((a, i) => {
+        if (t < a - 0.25 || t > a + 0.25) return null;
+        const x = interpolate(t, [a - 0.22, a + 0.22], [-1500, 1500], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) });
+        return <div key={i} style={{ position: "absolute", top: -100, bottom: -100, left: x, width: 1300, background: Y, transform: "skewX(-14deg)", zIndex: 20 }} />;
+      })}
       {hasVoice && <Audio src={staticFile("voz.mp3")} volume={1} />}
       <Audio src={staticFile("sfx.wav")} volume={0.7} />
       <Audio src={staticFile("music.wav")} volume={musicVol} />
@@ -421,8 +599,6 @@ const CSS = `
 .paper{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,#F2F1ED 0%,#E4E3DE 70%,#D8D7D1 100%)}
 .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,0,0,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.045) 1px,transparent 1px);background-size:64px 64px}
 .lines{position:absolute;inset:0;width:1080px;height:1920px}
-.prog{position:absolute;top:120px;left:110px;right:110px;height:5px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;z-index:9}
-.prog i{display:block;height:100%;background:${INK};transform-origin:left}
 .sc{position:absolute;inset:0} .obj{position:absolute}
 .arc{position:absolute;inset:0;width:1080px;height:1920px}
 .txt{position:absolute;right:110px}
