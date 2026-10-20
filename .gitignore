@@ -10,3 +10,4 @@ reel/remotion-reel/.env
 reel/remotion-reel/public/*.wav
 reel/remotion-reel/public/voz.mp3
 reel/remotion-reel/public/events.json
+reel/voice-previews/
