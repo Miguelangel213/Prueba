@@ -12,7 +12,7 @@ T=$(node -p "require('./public/timing.json').total")
  if [ -f musica.mp3 ]; then
    ffmpeg -y -loglevel error -i musica.mp3 -t "$T" music.wav
  else
-   python3 ../$KIT/music.py "$T" music.wav
+   python3 ../scripts/music2.py "$T" music.wav
  fi)
 mkdir -p out
 npx remotion render Reel3IAs out/raw.mp4 --codec h264 --pixel-format yuv420p --audio-codec aac --browser-executable="$BROWSER" --log=error

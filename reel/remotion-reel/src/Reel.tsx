@@ -556,7 +556,7 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice, bi
         duck = Math.max(duck, v);
       }
     }
-    const base = 0.2 - (0.2 - 0.1) * duck;
+    const base = 0.28 - (0.28 - 0.11) * duck;
     return base * interpolate(tt, [0, 0.3, T - 1.5, T], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   };
 
