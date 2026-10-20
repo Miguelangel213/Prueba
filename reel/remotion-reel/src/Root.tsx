@@ -26,6 +26,8 @@ export const RemotionRoot: React.FC = () => (
         ends: d.ends,
         total: d.total,
         hasVoice: Boolean(d.voice),
+        bigAt: d.bigAt,
+        footAt: d.footAt,
       };
       return { durationInFrames: Math.ceil(d.total * FPS), props };
     }}

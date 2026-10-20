@@ -16,7 +16,5 @@ T=$(node -p "require('./public/timing.json').total")
  fi)
 mkdir -p out
 npx remotion render Reel3IAs out/raw.mp4 --codec h264 --pixel-format yuv420p --audio-codec aac --browser-executable="$BROWSER" --log=error
-ffmpeg -y -loglevel error -i out/raw.mp4 -c:v copy \
-  -af "loudnorm=I=-14:TP=-1.5:LRA=11,alimiter=limit=0.89" \
-  -c:a aac -b:a 192k -movflags +faststart out/reel_3IAs_final.mp4
+bash scripts/finalize.sh
 echo "LISTO: $PWD/out/reel_3IAs_final.mp4"

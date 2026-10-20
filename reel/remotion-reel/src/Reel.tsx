@@ -15,6 +15,8 @@ export type ReelProps = {
   ends: number[];
   total: number;
   hasVoice: boolean;
+  bigAt?: number[];
+  footAt?: number;
 };
 
 const Y = "#F5C400";
@@ -200,8 +202,9 @@ const Head: React.FC<{
   t0: number;
   top: number;
   bigsize?: number;
-}> = ({ t, sm, big, xs, t0, top, bigsize }) => {
-  const tb = tbOf(t0, sm);
+  tbAt?: number;
+}> = ({ t, sm, big, xs, t0, top, bigsize, tbAt }) => {
+  const tb = tbAt ?? tbOf(t0, sm);
   const sp = SP(t, tb, 9, 150);
   return (
     <div className="txt" style={{ top, left: 150 }}>
@@ -299,20 +302,20 @@ const Chips: React.FC<{ t: number; a: number }> = ({ t, a }) => {
   );
 };
 
-export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) => {
+export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice, bigAt, footAt }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
   const s = [...starts, T];
 
   const impacts = [
-    tbOf(s[0], "No contrates un asistente"),
-    tbOf(s[1], "Notas, correos, buscar info…"),
-    tbOf(s[2] + 0.2, "La primera"),
-    tbOf(s[3] + 0.2, "La segunda"),
-    tbOf(s[4] + 0.2, "La tercera"),
-    tbOf(s[5] + 0.4, "Juntas trabajan como tu"),
-    tbOf(s[6], "¿Cuál pruebas primero?"),
+    bigAt?.[0] ?? tbOf(s[0], "No contrates un asistente"),
+    bigAt?.[1] ?? tbOf(s[1], "Notas, correos, buscar info…"),
+    bigAt?.[2] ?? tbOf(s[2] + 0.2, "La primera"),
+    bigAt?.[3] ?? tbOf(s[3] + 0.2, "La segunda"),
+    bigAt?.[4] ?? tbOf(s[4] + 0.2, "La tercera"),
+    bigAt?.[5] ?? tbOf(s[5] + 0.4, "Juntas trabajan como tu"),
+    bigAt?.[6] ?? tbOf(s[6], "¿Cuál pruebas primero?"),
   ];
   const sceneStyle = (i: number): React.CSSProperties => {
     const a = s[i], b = s[i + 1];
@@ -348,10 +351,10 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
             </svg>
           </div>
         </Obj>
-        <Head t={t} sm="No contrates un asistente" big="TODAVÍA" xs="prueba antes estas 3 IAs gratis" t0={a} top={900} bigsize={200} />
+        <Head t={t} sm="No contrates un asistente" tbAt={bigAt?.[0]} big="TODAVÍA" xs="prueba antes estas 3 IAs gratis" t0={a} top={900} bigsize={200} />
         <Sticker t={t} t0={a + 0.6} e="💸" x={760} y={300} size={150} rot={12} />
         <Sticker t={t} t0={a + 0.9} e="⏰" x={830} y={560} size={110} rot={-10} phase={2} />
-        <Burst t={t} t0={tbOf(a, "No contrates un asistente")} x={430} y={1010} />
+        <Burst t={t} t0={bigAt?.[0] ?? tbOf(a, "No contrates un asistente")} x={430} y={1010} />
       </>,
     );
   }
@@ -371,11 +374,11 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
             <Bub who={who}>{txt}</Bub>
           </Obj>
         ))}
-        <Head t={t} sm="Notas, correos, buscar info…" big="TODO EL DÍA" xs="en tareas que no venden" t0={a} top={760} bigsize={138} />
+        <Head t={t} sm="Notas, correos, buscar info…" tbAt={bigAt?.[1]} big="TODO EL DÍA" xs="en tareas que no venden" t0={a} top={760} bigsize={138} />
         <Sticker t={t} t0={a + 0.5} e="📧" x={790} y={240} size={120} rot={8} />
         <Sticker t={t} t0={a + 1.0} e="📝" x={830} y={1380} size={120} rot={-8} phase={1} />
         <div style={{ position: "absolute", left: 585, top: 190, width: 84, height: 84, borderRadius: "50%", background: "#E5484D", color: "#fff", fontWeight: 800, fontSize: 34, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(229,72,77,.4)", transform: `scale(${SP(t, a + 0.7, 7, 200)})` }}>99+</div>
-        <Burst t={t} t0={tbOf(a, "Notas, correos, buscar info…")} x={450} y={870} n={16} />
+        <Burst t={t} t0={bigAt?.[1] ?? tbOf(a, "Notas, correos, buscar info…")} x={450} y={870} n={16} />
       </>,
     );
   }
@@ -400,10 +403,10 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
           </div>
         </Obj>
         <Num t={t} a={a} n="01" />
-        <Head t={t} sm="La primera" big="ESCRIBE" xs="respuestas, correos y descripciones por ti" t0={a + 0.2} top={1180} bigsize={190} />
+        <Head t={t} sm="La primera" tbAt={bigAt?.[2]} big="ESCRIBE" xs="respuestas, correos y descripciones por ti" t0={a + 0.2} top={1180} bigsize={190} />
         <Sticker t={t} t0={a + 0.5} e="✨" x={880} y={180} size={120} rot={10} />
         <Sticker t={t} t0={a + 1.2} e="💬" x={820} y={860} size={120} rot={-8} phase={2} />
-        <Burst t={t} t0={tbOf(a + 0.2, "La primera")} x={480} y={1330} />
+        <Burst t={t} t0={bigAt?.[2] ?? tbOf(a + 0.2, "La primera")} x={480} y={1330} />
       </>,
     );
   }
@@ -437,10 +440,10 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
           </div>
         </Obj>
         <Num t={t} a={a} n="02" />
-        <Head t={t} sm="La segunda" big="ANOTA" xs="graba tus reuniones y te da el resumen" t0={a + 0.2} top={1180} bigsize={190} />
+        <Head t={t} sm="La segunda" tbAt={bigAt?.[3]} big="ANOTA" xs="graba tus reuniones y te da el resumen" t0={a + 0.2} top={1180} bigsize={190} />
         <Sticker t={t} t0={a + 0.5} e="🎙️" x={880} y={180} size={120} rot={10} />
         <Sticker t={t} t0={a + 2.1} e="📝" x={830} y={900} size={110} rot={-8} phase={1} />
-        <Burst t={t} t0={tbOf(a + 0.2, "La segunda")} x={420} y={1330} />
+        <Burst t={t} t0={bigAt?.[3] ?? tbOf(a + 0.2, "La segunda")} x={420} y={1330} />
       </>,
     );
   }
@@ -470,11 +473,11 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
           </div>
         </Obj>
         <Num t={t} a={a} n="03" />
-        <Head t={t} sm="La tercera" big="APRENDE" xs="tu negocio y responde con tu info" t0={a + 0.2} top={1180} bigsize={190} />
+        <Head t={t} sm="La tercera" tbAt={bigAt?.[4]} big="APRENDE" xs="tu negocio y responde con tu info" t0={a + 0.2} top={1180} bigsize={190} />
         <Sticker t={t} t0={a + 0.5} e="🧠" x={880} y={170} size={120} rot={10} />
         <Sticker t={t} t0={a + 2.0} e="📚" x={850} y={930} size={110} rot={-8} phase={2} />
-        <Burst t={t} t0={tbOf(a + 0.2, "La tercera")} x={500} y={1330} />
-        <div className="foot" style={A(t, "w", a + 1.6)}>
+        <Burst t={t} t0={bigAt?.[4] ?? tbOf(a + 0.2, "La tercera")} x={500} y={1330} />
+        <div className="foot" style={A(t, "w", footAt ?? a + 1.6)}>
           antes se llamaba NotebookLM
         </div>
       </>,
@@ -509,14 +512,14 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
             </div>
           ))}
         </div>
-        <Head t={t} sm="Juntas trabajan como tu" big="ASISTENTE" xs="y no te cobran sueldo" t0={a + 0.4} top={900} bigsize={150} />
+        <Head t={t} sm="Juntas trabajan como tu" tbAt={bigAt?.[5]} big="ASISTENTE" xs="y no te cobran sueldo" t0={a + 0.4} top={900} bigsize={150} />
         {[400, 680].map((x, i) => (
           <div key={x} style={{ position: "absolute", left: x - 38, top: 482, width: 76, height: 76, borderRadius: "50%", background: Y, color: INK, fontWeight: 900, fontSize: 56, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 10px 24px rgba(0,0,0,.15)", transform: `scale(${SP(t, a + 0.6 + i * 0.35, 7, 200)})` }}>+</div>
         ))}
         <Sticker t={t} t0={a + 1.0} e="✨" x={110} y={240} size={100} rot={-12} />
         <Sticker t={t} t0={a + 1.3} e="⭐" x={880} y={250} size={100} rot={12} phase={2} />
         <div style={{ position: "absolute", left: 560, top: 1330, padding: "14px 30px", border: "7px solid #E5484D", color: "#E5484D", borderRadius: 18, fontWeight: 800, fontSize: 64, letterSpacing: 2, transform: `rotate(-8deg) scale(${1.6 - 0.6 * SP(t, a + 2.2, 12, 220)})`, opacity: clamp01(SP(t, a + 2.2, 12, 220) * 3) }}>$0 SUELDO</div>
-        <Burst t={t} t0={tbOf(a + 0.4, "Juntas trabajan como tu")} x={540} y={1020} n={26} />
+        <Burst t={t} t0={bigAt?.[5] ?? tbOf(a + 0.4, "Juntas trabajan como tu")} x={540} y={1020} n={26} />
       </>,
     );
   }
@@ -528,10 +531,10 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
         <Obj t={t} pos={{ right: 120, top: 300 }} anim="inTR" t0={a + 0.1}>
           <Bub who="tú · comentario" style={{ fontSize: 72, fontWeight: 800 }}>2️⃣</Bub>
         </Obj>
-        <Head t={t} sm="¿Cuál pruebas primero?" big="COMENTA" xs="1, 2 o 3 · y guárdalo para después" t0={a} top={780} bigsize={158} />
+        <Head t={t} sm="¿Cuál pruebas primero?" tbAt={bigAt?.[6]} big="COMENTA" xs="1, 2 o 3 · y guárdalo para después" t0={a} top={780} bigsize={158} />
         <Sticker t={t} t0={a + 0.8} e="❤️" x={880} y={610} size={100} rot={10} />
         <Chips t={t} a={a} />
-        <Burst t={t} t0={tbOf(a, "¿Cuál pruebas primero?")} x={520} y={900} />
+        <Burst t={t} t0={bigAt?.[6] ?? tbOf(a, "¿Cuál pruebas primero?")} x={520} y={900} />
         <div className="brand" style={{ top: 1260, ...A(t, "w", a + 1.4) }}>
           <div className="logo">AG</div>
           <div>@angelgomezhg1</div>
@@ -553,7 +556,7 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
         duck = Math.max(duck, v);
       }
     }
-    const base = 0.18 - (0.18 - 0.06) * duck;
+    const base = 0.2 - (0.2 - 0.1) * duck;
     return base * interpolate(tt, [0, 0.3, T - 1.5, T], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   };
 
@@ -588,7 +591,7 @@ export const Reel: React.FC<ReelProps> = ({ starts, ends, total: T, hasVoice }) 
         return <div key={i} style={{ position: "absolute", top: -100, bottom: -100, left: x, width: 1300, background: Y, transform: "skewX(-14deg)", zIndex: 20 }} />;
       })}
       {hasVoice && <Audio src={staticFile("voz.mp3")} volume={1} />}
-      <Audio src={staticFile("sfx.wav")} volume={0.7} />
+      <Audio src={staticFile("sfx.wav")} volume={0.14} />
       <Audio src={staticFile("music.wav")} volume={musicVol} />
     </AbsoluteFill>
   );

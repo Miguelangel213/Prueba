@@ -7,6 +7,7 @@ from scipy.signal import butter, sosfilt, fftconvolve
 SR = 44100
 OUT = sys.argv[1]
 d = json.load(open("events.json")); T = d["total"]; S = d["starts"]
+BIG = json.load(open("timing.json")).get("bigAt")  # momento exacto en que la voz dice cada palabra grande
 N = int(SR * T)
 rng = np.random.default_rng(7)
 
@@ -70,12 +71,13 @@ GEN = {"whoosh": enter, "whip": whip, "pop": impact, "sparkle": sparkle, "pop2":
        "boing": boing, "tick": tick, "tap": tap, "ding": ding, "stamp": stamp,
        "swish": lambda: whoosh(.3, 3, 5.5, .4), "boom": boom}
 
-ev = [(t, k) for t, k in d["events"] if k != "riser"]
+ev = [(t, k) for t, k in d["events"] if k != "riser" and not (BIG and k == "pop")]
+if BIG: ev += [(t, "pop") for t in BIG]
 ev.append((0.0, "boom"))
 for a in S[1:]:
     ev.append((a - .27, "whip"))                       # pico justo cuando la franja cubre la pantalla
 # destellos de confeti tras cada impacto de palabra grande
-ev += [(t + .04, "sparkle") for t, k in d["events"] if k == "pop"]
+ev += [(t + .04, "sparkle") for t in (BIG or [t for t, k in d["events"] if k == "pop"])]
 # stickers / elementos extra (mismos tiempos que Reel.tsx)
 st = {0: [.6, .9], 1: [.5, 1.0], 2: [.5, 1.2], 3: [.5, 2.1], 4: [.5, 2.0], 5: [1.0, 1.3], 6: [.8]}
 for i, offs in st.items(): ev += [(S[i] + o, "boing") for o in offs]
