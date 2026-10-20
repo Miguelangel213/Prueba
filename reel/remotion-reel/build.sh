@@ -10,7 +10,8 @@ T=$(node -p "require('./public/timing.json').total")
  EVENTS_ONLY=1 TIMING_DIR=$PWD python3 ../$KIT/reel5.py
  python3 ../scripts/sfx2.py sfx.wav
  if [ -f musica.mp3 ]; then
-   ffmpeg -y -loglevel error -i musica.mp3 -t "$T" music.wav
+   # música externa: desde MUSIC_START (s), igualada a ~-18 LUFS para el mismo mezclado
+   ffmpeg -y -loglevel error -ss "${MUSIC_START:-0}" -i musica.mp3 -t "$T" -ar 44100 -ac 2 -af "loudnorm=I=-18:TP=-2:LRA=7" music.wav
  else
    python3 ../scripts/music2.py "$T" music.wav
  fi)
