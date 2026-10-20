@@ -3,3 +3,10 @@ reel/reel-3ias/*.mp4
 reel/reel-3ias/frames/
 reel/reel-3ias/.env
 reel/reel-3ias/voz.mp3
+reel/chk/
+reel/remotion-reel/node_modules/
+reel/remotion-reel/out/
+reel/remotion-reel/.env
+reel/remotion-reel/public/*.wav
+reel/remotion-reel/public/voz.mp3
+reel/remotion-reel/public/events.json

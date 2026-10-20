@@ -7,8 +7,9 @@ Y = "#F5C400"; INK = "#2B2B2E"; GRAY = "#76767B"
 
 STARTS = [0.0, 3.4, 7.2, 12.0, 16.8, 21.8, 25.6]
 T = 30.0
-if os.path.exists(os.path.join(OUT, "timing.json")):
-    d = json.load(open(os.path.join(OUT, "timing.json"))); STARTS = d["starts"]; T = d["total"]
+TD = os.environ.get("TIMING_DIR", OUT)
+if os.path.exists(os.path.join(TD, "timing.json")):
+    d = json.load(open(os.path.join(TD, "timing.json"))); STARTS = d["starts"]; T = d["total"]
 
 EVENTS = []  # (t, tipo) para los efectos de sonido
 def ev(t, k): EVENTS.append((round(t, 3), k)); return t
@@ -168,7 +169,8 @@ LINES = f"""<svg class="lines" viewBox="0 0 1080 1920" style="animation:drift {T
 <path class="ln" pathLength="1" d="M200 -40 L1000 1960" style="{an('draw',s[5],1.6,'ease-out')}"/></svg>"""
 HTML = f"""<html><head><style>{CSS}</style></head><body><div class="paper"></div><div class="grid"></div>{LINES}<div class="prog"><i></i></div>{body}</body></html>"""
 
-json.dump({"events": sorted(EVENTS), "starts": STARTS, "total": T}, open(os.path.join(OUT, "events.json"), "w"))
+json.dump({"events": sorted(EVENTS), "starts": STARTS, "total": T}, open(os.path.join(TD, "events.json"), "w"))
+if os.environ.get("EVENTS_ONLY"): raise SystemExit(0)
 
 async def main():
     fr = os.path.join(OUT, "frames"); shutil.rmtree(fr, ignore_errors=True); os.makedirs(fr)
