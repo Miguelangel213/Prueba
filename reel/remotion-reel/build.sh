@@ -8,7 +8,7 @@ BROWSER=${BROWSER:-/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/he
 T=$(node -p "require('./public/timing.json').total")
 (cd public
  EVENTS_ONLY=1 TIMING_DIR=$PWD python3 ../$KIT/reel5.py
- python3 ../$KIT/sfx.py sfx.wav
+ python3 ../scripts/sfx2.py sfx.wav
  if [ -f musica.mp3 ]; then
    ffmpeg -y -loglevel error -i musica.mp3 -t "$T" music.wav
  else
